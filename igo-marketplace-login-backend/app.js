@@ -31,8 +31,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+const corsConfig = {
+    origin: true,
+    credentials: true,
+};
+
 //To allow cross-origin requests
-app.use(cors());
+app.use(cors(corsConfig));
 
 //Route Prefixes
 app.use("/", indexRouter);

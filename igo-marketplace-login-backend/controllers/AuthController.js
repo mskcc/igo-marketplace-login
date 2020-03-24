@@ -139,8 +139,14 @@ exports.login = [
 				const secret = process.env.JWT_SECRET;
 				//Generated JWT token with Payload and secret.
 				const token = jwt.sign(jwtPayload, secret, jwtData);
+				// const token = jwt.sign(jwtPayload, secret);
 				userData.token = token;
-				res.cookie('session', token, {httpOnly: true});
+
+				const cookieOptions = {
+					httpOnly: true,
+					expires: 0
+				};
+				res.cookie('session', token, {httpOnly: true}, cookieOptions);
 				return apiResponse.successResponseWithData(res,"Login Success.", userData);
 			}
 		} catch (err) {
