@@ -22,8 +22,6 @@ function BookData(data) {
  */
 exports.bookList = [
 	function (req, res) {
-		console.log(req.cookies);
-		console.log(req.signedCookies);
 		return res;
 	},
 	auth,

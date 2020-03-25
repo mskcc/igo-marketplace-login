@@ -23,14 +23,14 @@ export function testGetEndpoint() {
         .catch(error => {throw new Error('Unable to get Get Events: ' + error) });
 }
 
-export function sendLoginRequest(userName, password) {
+export function sendLoginRequest(userName, password, redirect) {
     /*
     return new Promise((resolve) => { resolve(API_PROJECT) })
         .then(resp => {return getData(resp)})
         .catch(error => {throw new Error('Unable to get Get Events: ' + error) });
      */
     return axios
-        .post(`${LOGIN_ENDPOINT}/login`, { userName, password }, {withCredentials: true})
+        .post(`${LOGIN_ENDPOINT}/login`, { userName, password, redirect }, {withCredentials: true})
         .then(resp => {return getData(resp) })
         .catch(error => {throw new Error('Unable to get Get Events: ' + error) });
 }

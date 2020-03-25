@@ -8,6 +8,15 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
+const ldap = require('ldapjs');
+const client = ldap.createClient({
+	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
+	// url: 'ldaps://ldapha.mskcc.root.mskcc.org/'	// Error: getaddrinfo ENOTFOUND ldapha.mskcc.root.mskcc.org
+	tlsOptions: {
+		rejectUnauthorized: false
+	}
+});
+const { getRoles, getGroups, getSurname, getGivenName, getUserName, getRole, getTitle } = require('../helpers/ldapUtil');
 
 exports.redirect = [
 	(req, res) => {
@@ -74,7 +83,7 @@ exports.register = [
 					let html = "<p>Please Confirm your Account.</p><p>OTP: "+otp+"</p>";
 					// Send confirmation email
 					mailer.send(
-						constants.confirmEmails.from, 
+						constants.confirmEmails.from,
 						req.body.email,
 						"Confirm Account",
 						html
@@ -122,9 +131,53 @@ exports.login = [
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
 			}else {
+				const user = req.body.userName;
+				const pwd = req.body.password;
+				client.bind(`${user}@mskcc.org`, pwd, function(err) {
+					if(err){
+						console.log(err);
+						// err is only populated when failed
+						return apiResponse.ErrorResponse(res, "Failed to authenticate");
+					}
+				});
+				const opts = {
+					filter: `(sAMAccountName=${user})`,
+					scope: 'sub',
+					attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName']
+				};
+				client.search("DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG", opts, function(err, res) {
+					res.on('searchEntry', function(entry) {
+						const result = entry.object;
+						const groups = getGroups(result);
+						const roles = getRoles(groups);
+						const surname = getSurname(result);
+						const givenName = getGivenName(result);
+						const userName = getUserName(result);
+						const title = getTitle(result);
+						const loginDate = new Date();
+
+						console.log(groups);
+						console.log(roles);
+						console.log(surname);
+						console.log(givenName);
+						console.log(userName);
+						console.log(title);
+						console.log(loginDate);
+
+					});
+					res.on('searchReference', function(referral) {
+						console.log('referral: ' + referral.uris.join());
+					});
+					res.on('error', function(err) {
+						return apiResponse.ErrorResponse(res, `Failed to retrieve LDAP information: ${err.message}`);
+					});
+					res.on('end', function(result) {
+						console.log('status: ' + result.status);
+					});
+				});
+
 				// Query the login service
 				// TODO - Query the login service
-
 				const userData = {
 					_id: 314159,
 					firstName: "David",
@@ -146,8 +199,20 @@ exports.login = [
 					httpOnly: true,
 					expires: 0
 				};
+
+
+
 				res.cookie('session', token, {httpOnly: true}, cookieOptions);
-				return apiResponse.successResponseWithData(res,"Login Success.", userData);
+
+				res.writeHead(301,{Location: "/api/book/"});
+				res.end();
+				/*
+				client.unbind(function(err) {
+					console.log(err);
+				});
+				 */
+
+				// return apiResponse.successResponseWithData(res,"Login Success.", userData);
 			}
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err.message);
