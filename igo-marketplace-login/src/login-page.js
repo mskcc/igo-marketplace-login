@@ -38,11 +38,9 @@ function LoginPage({match}) {
     };
 
     const login = () => {
-        sendLoginRequest(username, password, redirect);
-    };
-
-    const getBook = () => {
-        testGetEndpoint();
+        sendLoginRequest(username, password, redirect).then(() => {
+            window.location.href = 'https://www.youtube.com/watch?v=w9uWPBDHEKE';
+        })
     };
 
     return (<form className={classes.root} noValidate autoComplete="off">
@@ -63,9 +61,10 @@ function LoginPage({match}) {
                         Submit
                     </Button>
                     <Button variant="contained"
-                            onClick={getBook}>
-                        Get Book
+                            onClick={testRedirect}>
+                        Redirect
                     </Button>
+
                 </div>
             </form>
     );

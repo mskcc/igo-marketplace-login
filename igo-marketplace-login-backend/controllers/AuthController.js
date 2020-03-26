@@ -23,14 +23,6 @@ const {
 	getGivenName,
 	getTitle } = require('../helpers/ldapUtil');
 
-exports.redirect = [
-	(req, res) => {
-		res.writeHead(301,{Location: "http://w3docs.com/"});
-		res.status(200);
-		res.end();
-	}
-];
-
 /**
  * User registration.
  *
@@ -252,17 +244,6 @@ exports.login = [
 				const pwd = req.body.password;
 
 				const ldapResponse = await handleLoginRequest(client, user, pwd);
-
-				/*
-					(resp) => {
-						ldapResponse = resp
-					}
-				).catch((err) => {
-					console.log(err);
-					return apiResponse.ErrorResponse(res,"Login Failure");
-				});
-				*/
-
 				const userData  = await loadUser(user, ldapResponse);
 
 				//Prepare JWT token for authentication
@@ -280,7 +261,6 @@ exports.login = [
 				};
 				res.cookie('session', token, {httpOnly: true}, cookieOptions);
 				apiResponse.successResponse(res, 'Successful login');
-
 			}
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err.message);
