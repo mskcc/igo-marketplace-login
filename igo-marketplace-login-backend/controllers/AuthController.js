@@ -16,7 +16,12 @@ const client = ldap.createClient({
 		rejectUnauthorized: false
 	}
 });
-const { getRoles, getGroups, getSurname, getGivenName, getUserName, getRole, getTitle } = require('../helpers/ldapUtil');
+const {
+	getRoles,
+	getGroups,
+	getSurname,
+	getGivenName,
+	getTitle } = require('../helpers/ldapUtil');
 
 exports.redirect = [
 	(req, res) => {
@@ -111,6 +116,118 @@ exports.register = [
 		}
 	}];
 
+
+const sendLDAPSearch = async function(client, user) {
+	const opts = {
+		filter: `(sAMAccountName=${user})`,
+		scope: 'sub',
+		attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName']
+	};
+	const promise = new Promise(function(resolve, reject) {
+		client.search("DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG", opts, (err, res) => {
+			res.on('searchEntry', function(entry) {
+				const result = entry.object;
+				resolve(result);
+			});
+			res.on('searchReference', function(referral) {
+				console.log('referral: ' + referral.uris.join());
+			});
+			res.on('error', function(err) {
+				reject(`LDAP Error: ${err.message}`);
+			});
+			res.on('end', function(result) {
+				console.log('status: ' + result.status);console.log('status: ' + result.status);
+				if(result.status !== 0){
+					reject(`LDAP Status Fail: ${result.status}`)
+				}
+			});
+		});
+	});
+	return promise;
+};
+
+const handleLoginRequest = async function(client, user, pwd) {
+	const promise = new Promise(function(resolve, reject) {
+		client.bind(`${user}@mskcc.org`, pwd, function(err) {
+			if(err){
+				reject(`Failed to authenticate. Error: ${err.message}`);
+			}
+		});
+		sendLDAPSearch(client, user).then(
+			(resp) => {
+				resolve(resp);
+			}
+		)
+	});
+
+	return promise;
+};
+
+/**
+ * Returns usermodel for a username if it exists
+ *
+ * @param username
+ * @returns {Promise<null|*>}
+ */
+const getExistingUser = async function(username) {
+	const results = await UserModel.find({username});
+
+	if(results.length === 0){
+		return null;
+	} else if(results.length > 1){
+		// Only one result should be returned for a username
+		throw new Error(`Unable to resolve single user: ${username}`);
+	}
+
+	return results[0];
+};
+
+const loadUser = async function(username, ldapResponse){
+	let user = await getExistingUser(username);
+
+	const groups = getGroups(ldapResponse);
+	const roles = getRoles(groups);
+	const surname = getSurname(ldapResponse);
+	const givenName = getGivenName(ldapResponse);
+	const title = getTitle(ldapResponse);
+	const loginDate = new Date();
+
+	if(user){
+		console.log(`Updating user: ${username}`);
+		user.set({
+			title,
+			groups: groups.join(','),
+			isLabMember: roles.has(constants.LDAP.LAB_MEMBER),
+			isAdmin: roles.has(constants.LDAP.ADMIN),
+			isPM: roles.has(constants.LDAP.PM),
+			isUser: roles.has(constants.LDAP.USER),
+			loginLastDate: loginDate
+		});
+	} else {
+		console.log(`Adding new user: ${username}`);
+		// New user - create new entry and add
+		user = new UserModel({
+			firstName: givenName,
+			lastName: surname,
+			username: username,
+			title: title,
+			groups: groups.join(','),
+			isLabMember: roles.has(constants.LDAP.LAB_MEMBER),
+			isAdmin: roles.has(constants.LDAP.ADMIN),
+			isPM: roles.has(constants.LDAP.PM),
+			isUser: roles.has(constants.LDAP.USER),
+			loginFirstDate: loginDate,
+			loginLastDate: loginDate
+		});
+		user.save(function (err, resp) {
+			if (err) return console.error(err);
+			console.log(resp);
+		});
+	}
+
+	return user;
+};
+
 /**
  * User login.
  *
@@ -125,7 +242,7 @@ exports.login = [
 	body("password").isLength({ min: 1 }).trim().withMessage("Password must be specified."),
 	sanitizeBody("userName").escape(),
 	sanitizeBody("password").escape(),
-	(req, res) => {
+	async (req, res) => {
 		try {
 			const errors = validationResult(req);
 			if (!errors.isEmpty()) {
@@ -133,86 +250,37 @@ exports.login = [
 			}else {
 				const user = req.body.userName;
 				const pwd = req.body.password;
-				client.bind(`${user}@mskcc.org`, pwd, function(err) {
-					if(err){
-						console.log(err);
-						// err is only populated when failed
-						return apiResponse.ErrorResponse(res, "Failed to authenticate");
+
+				const ldapResponse = await handleLoginRequest(client, user, pwd);
+
+				/*
+					(resp) => {
+						ldapResponse = resp
 					}
+				).catch((err) => {
+					console.log(err);
+					return apiResponse.ErrorResponse(res,"Login Failure");
 				});
-				const opts = {
-					filter: `(sAMAccountName=${user})`,
-					scope: 'sub',
-					attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName']
-				};
-				client.search("DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG", opts, function(err, res) {
-					res.on('searchEntry', function(entry) {
-						const result = entry.object;
-						const groups = getGroups(result);
-						const roles = getRoles(groups);
-						const surname = getSurname(result);
-						const givenName = getGivenName(result);
-						const userName = getUserName(result);
-						const title = getTitle(result);
-						const loginDate = new Date();
+				*/
 
-						console.log(groups);
-						console.log(roles);
-						console.log(surname);
-						console.log(givenName);
-						console.log(userName);
-						console.log(title);
-						console.log(loginDate);
+				const userData  = await loadUser(user, ldapResponse);
 
-					});
-					res.on('searchReference', function(referral) {
-						console.log('referral: ' + referral.uris.join());
-					});
-					res.on('error', function(err) {
-						return apiResponse.ErrorResponse(res, `Failed to retrieve LDAP information: ${err.message}`);
-					});
-					res.on('end', function(result) {
-						console.log('status: ' + result.status);
-					});
-				});
-
-				// Query the login service
-				// TODO - Query the login service
-				const userData = {
-					_id: 314159,
-					firstName: "David",
-					lastName: "Streid",
-					userName: "streidd",
-				};
 				//Prepare JWT token for authentication
-				const jwtPayload = userData;
+				const jwtPayload = userData.toJSON();
 				const jwtData = {
 					expiresIn: process.env.JWT_TIMEOUT_DURATION,
 				};
 				const secret = process.env.JWT_SECRET;
-				//Generated JWT token with Payload and secret.
 				const token = jwt.sign(jwtPayload, secret, jwtData);
-				// const token = jwt.sign(jwtPayload, secret);
 				userData.token = token;
 
 				const cookieOptions = {
 					httpOnly: true,
 					expires: 0
 				};
-
-
-
 				res.cookie('session', token, {httpOnly: true}, cookieOptions);
+				apiResponse.successResponse(res, 'Successful login');
 
-				res.writeHead(301,{Location: "/api/book/"});
-				res.end();
-				/*
-				client.unbind(function(err) {
-					console.log(err);
-				});
-				 */
-
-				// return apiResponse.successResponseWithData(res,"Login Success.", userData);
 			}
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err.message);
