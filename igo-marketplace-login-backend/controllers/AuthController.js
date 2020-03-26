@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const ldap = require('ldapjs');
+const cookieValidator = require("../middlewares/jwt-in-cookie");
 const client = ldap.createClient({
 	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
 	// url: 'ldaps://ldapha.mskcc.root.mskcc.org/'	// Error: getaddrinfo ENOTFOUND ldapha.mskcc.root.mskcc.org
@@ -211,9 +212,10 @@ const loadUser = async function(username, ldapResponse){
 			loginFirstDate: loginDate,
 			loginLastDate: loginDate
 		});
-		user.save(function (err, resp) {
-			if (err) return console.error(err);
-			console.log(resp);
+		user.save(function (err) {
+			if (err) {
+				throw err;
+			}
 		});
 	}
 
@@ -248,18 +250,23 @@ exports.login = [
 
 				//Prepare JWT token for authentication
 				const jwtPayload = userData.toJSON();
+				cookieValidator.addCookieToken(res, jwtPayload);
+
+				/*
 				const jwtData = {
 					expiresIn: process.env.JWT_TIMEOUT_DURATION,
 				};
+				// TODO - Take secret from DB
 				const secret = process.env.JWT_SECRET;
 				const token = jwt.sign(jwtPayload, secret, jwtData);
-				userData.token = token;
-
 				const cookieOptions = {
 					httpOnly: true,
 					expires: 0
 				};
 				res.cookie('session', token, {httpOnly: true}, cookieOptions);
+				*/
+
+				// userData.token = token;
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {

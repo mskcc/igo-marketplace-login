@@ -3,7 +3,7 @@ import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import './App.css';
 import Button from "@material-ui/core/Button";
-import {sendLoginRequest, testGetEndpoint} from "./services/login";
+import {sendLoginRequest, getBooks} from "./services/login";
 
 const useStyles = makeStyles(theme => ({
     root: {
@@ -37,10 +37,19 @@ function LoginPage({match}) {
         return username.length === 0 || password.length === 0;
     };
 
+    const testRedirect = () => {
+        console.log(redirect);
+        window.location.href = `http://${redirect}`;
+    }
+
     const login = () => {
         sendLoginRequest(username, password, redirect).then(() => {
-            window.location.href = 'https://www.youtube.com/watch?v=w9uWPBDHEKE';
+            // window.location.href = redirect;
         })
+    };
+
+    const books = () => {
+        getBooks();
     };
 
     return (<form className={classes.root} noValidate autoComplete="off">
@@ -64,7 +73,10 @@ function LoginPage({match}) {
                             onClick={testRedirect}>
                         Redirect
                     </Button>
-
+                    <Button variant="contained"
+                            onClick={books}>
+                        Books
+                    </Button>
                 </div>
             </form>
     );
