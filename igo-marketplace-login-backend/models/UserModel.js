@@ -3,12 +3,15 @@ var mongoose = require("mongoose");
 var UserSchema = new mongoose.Schema({
 	firstName: {type: String, required: true},
 	lastName: {type: String, required: true},
-	email: {type: String, required: true},
-	password: {type: String, required: true},
-	isConfirmed: {type: Boolean, required: true, default: 0},
-	confirmOTP: {type: String, required:false},
-	otpTries: {type: Number, required:false, default: 0},
-	status: {type: Boolean, required: true, default: 1}
+	username: {type: String, required: true},
+	title: {type: String, required: true},
+	groups: {type: String, required: true},
+	isLabMember: {type: Boolean, required: true},
+	isAdmin: {type: Boolean, required: true},
+	isPM: {type: Boolean, required: true},
+	isUser: {type: Boolean, required: true},
+	loginFirstDate: {type: Date, required: true},
+	loginLastDate: {type: Date, required: true},
 }, {timestamps: true});
 
 // Virtual for user's full name
