@@ -3,10 +3,9 @@ const { body,validationResult } = require("express-validator");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
-const { verifyCookie } = require("../middlewares/jwt-cookie");
 var mongoose = require("mongoose");
 mongoose.set("useFindAndModify", false);
-const jwt = require("jsonwebtoken");
+const cookieValidator = require("jwt-in-cookie");
 
 // Book Schema
 function BookData(data) {
@@ -23,7 +22,10 @@ function BookData(data) {
  * @returns {Object}
  */
 exports.bookList = [
-	verifyCookie,
+	(req, res, next) => {
+		cookieValidator.validateRequestCookie(req);
+		next();
+	},
 	function (req, res) {
 		console.log('Verified and sending back response');
 		return apiResponse.successResponse(res, "Success");

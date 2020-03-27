@@ -5,11 +5,10 @@ const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const utility = require("../helpers/utility");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const ldap = require('ldapjs');
-const cookieValidator = require("../middlewares/jwt-in-cookie");
+const cookieValidator = require("jwt-in-cookie");
 const client = ldap.createClient({
 	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
 	// url: 'ldaps://ldapha.mskcc.root.mskcc.org/'	// Error: getaddrinfo ENOTFOUND ldapha.mskcc.root.mskcc.org
