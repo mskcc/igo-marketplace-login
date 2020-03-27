@@ -249,7 +249,7 @@ exports.login = [
 
 				//Prepare JWT token for authentication
 				const jwtPayload = userData.toJSON();
-				cookieValidator.addCookieToken(res, jwtPayload);
+				cookieValidator.setJwtToken(res, jwtPayload);
 
 				/*
 				const jwtData = {

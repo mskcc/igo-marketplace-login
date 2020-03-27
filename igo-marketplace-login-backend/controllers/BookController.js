@@ -23,7 +23,7 @@ function BookData(data) {
  */
 exports.bookList = [
 	(req, res, next) => {
-		cookieValidator.validateRequestCookie(req);
+		cookieValidator.validateJwtToken(req);
 		next();
 	},
 	function (req, res) {
