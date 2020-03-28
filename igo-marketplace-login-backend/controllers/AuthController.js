@@ -9,6 +9,7 @@ const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const ldap = require('ldapjs');
 const cookieValidator = require("jwt-in-cookie");
+const { logger } = require("../helpers/winston");
 const client = ldap.createClient({
 	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
 	// url: 'ldaps://ldapha.mskcc.root.mskcc.org/'	// Error: getaddrinfo ENOTFOUND ldapha.mskcc.root.mskcc.org
@@ -142,7 +143,9 @@ const handleLoginRequest = async function(client, user, pwd) {
 	const promise = new Promise(function(resolve, reject) {
 		client.bind(`${user}@mskcc.org`, pwd, function(err) {
 			if(err){
-				reject(`Failed to authenticate. Error: ${err.message}`);
+				const errorMsg = `Failed to authenticate. Error: ${err.message}`;
+				logger.log("error", errorMsg);
+				reject(errorMsg);
 			}
 		});
 		sendLDAPSearch(client, user).then(
@@ -239,12 +242,15 @@ exports.login = [
 		try {
 			const errors = validationResult(req);
 			if (!errors.isEmpty()) {
-				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
+				return apiResponse.validationErrorWithData(res, "Failed login", errors.array());
 			}else {
 				const user = req.body.userName;
 				const pwd = req.body.password;
 
-				const ldapResponse = await handleLoginRequest(client, user, pwd);
+				const ldapResponse = await handleLoginRequest(client, user, pwd)
+					.catch(
+						(err) => {throw new Error(err);}
+					);
 				const userData  = await loadUser(user, ldapResponse);
 
 				//Prepare JWT token for authentication
@@ -269,7 +275,7 @@ exports.login = [
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {
-			return apiResponse.ErrorResponse(res, err.message);
+			return apiResponse.ErrorResponse(res, "Failed login");
 		}
 	}];
 
