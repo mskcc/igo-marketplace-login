@@ -4,6 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import './App.css';
 import Button from "@material-ui/core/Button";
 import {sendLoginRequest} from "./services/login";
+import {IGO_HOME} from "./config";
 
 const useStyles = makeStyles(theme => ({
     root: {
@@ -27,12 +28,30 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-function LoginPage({match}) {
+/**
+ * Try to retrieve the redirect path from the props passed into the routed component
+ *
+ * @param props
+ * @returns {string|*|string}
+ */
+const getRedirectPathFromProps = (props) => {
+    // Location will contain the full path and the target re-route path if present
+    const location = props['location'] || {};
+    const pathname = location['pathname'] || '';    // "/login/project-tracker"
+    const paths = pathname.split("/");    // ["", "login", "project-tracker"]
+    if(paths.length > 0){
+        return paths[paths.length - 1];            // "project-tracker"
+    };
+    // If not present in location, match will have it or, it will be re-routed to "/login"
+    return props.match['url'] || "/login";
+};
+
+function LoginPage(props) {
     // Take redirect prop, which should be a url that the login page will reroute to
     const classes = useStyles();
 
     // Redirect-url is the path that will be routed to after a successful login
-    const redirectPath = match['url'] || '/';
+    const redirectPath = getRedirectPathFromProps(props);
 
     const [username, setUserName] = useState('');
     const [password, setPassword] = useState('');
@@ -56,7 +75,7 @@ function LoginPage({match}) {
         setPrompt('Logging in...');
         sendLoginRequest(username, password).then(() => {
             setPrompt('Login Successful');
-            window.location.href = redirectPath;
+            window.location.href = `${IGO_HOME}/${redirectPath}`;
         }).catch((err) => {
             const resp = err.response || {};
             const data = resp.data || {};

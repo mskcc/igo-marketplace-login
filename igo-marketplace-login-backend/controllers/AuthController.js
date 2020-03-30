@@ -257,20 +257,6 @@ exports.login = [
 				const jwtPayload = userData.toJSON();
 				cookieValidator.setJwtToken(res, jwtPayload);
 
-				/*
-				const jwtData = {
-					expiresIn: process.env.JWT_TIMEOUT_DURATION,
-				};
-				// TODO - Take secret from DB
-				const secret = process.env.JWT_SECRET;
-				const token = jwt.sign(jwtPayload, secret, jwtData);
-				const cookieOptions = {
-					httpOnly: true,
-					expires: 0
-				};
-				res.cookie('session', token, {httpOnly: true}, cookieOptions);
-				*/
-
 				// userData.token = token;
 				apiResponse.successResponse(res, 'Successful login');
 			}

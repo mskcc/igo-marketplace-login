@@ -44,6 +44,17 @@ app.use(cors(corsConfig));
 
 //Route Prefixes
 app.use("/", indexRouter);
+/*
+        location /login/ {
+                proxy_pass    http://127.0.0.1:4200/;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+        }
+ */
+app.use("/login/", indexRouter); // From nginx.conf routes "location /login/" to "/login/"
 app.use("/api/", apiRouter);
 
 // throw 404 if URL not found
