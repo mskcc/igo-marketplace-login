@@ -17,5 +17,5 @@ deploy-qa:
 	make clean && \
 	make config-qa && \
 	make build && \
-	scp -r igo-marketplace-login-backend dlviigoweb1:deployments/srv/igo-marketplace-login
+	scp -r igo-marketplace-login-backend dlviigoweb1:deployments/igo-marketplace-login
 
