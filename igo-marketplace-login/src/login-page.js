@@ -101,7 +101,12 @@ function LoginPage(props) {
                                    label="Password"
                                    type="password"
                                    autoComplete="current-password"
-                                   value={password} onChange={changePassword}/>
+                                   value={password} onChange={changePassword}
+                                   onKeyPress={event => {
+                                    if (event.key === "Enter") {
+                                        login();
+                                    }
+                                  }}/>
                     </div>
                     <Button variant="contained" disabled={validInputs()}
                             onClick={login}>
