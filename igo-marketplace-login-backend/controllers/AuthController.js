@@ -266,6 +266,25 @@ exports.login = [
 	}];
 
 /**
+ * User logout - clears token value so that future validation calls will fail
+ *
+ * @param {string}      email
+ * @param {string}      password
+ *
+ * @returns {Object}
+ */
+exports.logout = [
+	async (req, res) => {
+		try {
+			cookieValidator.clearToken(res);
+			apiResponse.successResponse(res, 'Successful login');
+		} catch (err) {
+			return apiResponse.ErrorResponse(res, "Failed login");
+		}
+	}];
+
+
+/**
  * Verify Confirm otp.
  *
  * @param {string}      email
