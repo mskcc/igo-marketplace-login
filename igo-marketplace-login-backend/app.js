@@ -43,6 +43,8 @@ const corsConfig = {
 app.use(cors(corsConfig));
 
 //Route Prefixes
+app.use("/api/", apiRouter);
+app.use("/login/", indexRouter); // From nginx.conf routes "location /login/" to "/login/"
 app.use("/", indexRouter);
 /*
         location /login/ {
@@ -54,9 +56,6 @@ app.use("/", indexRouter);
                 proxy_cache_bypass $http_upgrade;
         }
  */
-app.use("/login/", indexRouter); // From nginx.conf routes "location /login/" to "/login/"
-app.use("/api/", apiRouter);
-
 // throw 404 if URL not found
 app.all("*", function(req, res) {
     return apiResponse.notFoundResponse(res, "Page not found");
