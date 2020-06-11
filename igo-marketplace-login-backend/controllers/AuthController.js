@@ -251,8 +251,7 @@ exports.login = [
 				const pwd = req.body.password;
 
 				logger.log("info", `Authenticating user: ${user}`);
-				const ldapResponse = sendLdapCredentials(client, user, pwd);
-				await ldapResponse;
+				const ldapResponse = await sendLdapCredentials(client, user, pwd);
 				const userData  = await loadUser(user, ldapResponse);
 
 				// Successful login - prepare valid JWT token for future authentication
