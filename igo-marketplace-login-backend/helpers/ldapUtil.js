@@ -37,7 +37,7 @@ exports.getRoles = (groups) => {
 
     // Any user not in a defined role-group is a user
     if(roles.size === 0){
-        roles.push(USER);
+        roles.add(USER);
     }
 
     return roles;
