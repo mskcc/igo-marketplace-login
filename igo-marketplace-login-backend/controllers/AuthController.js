@@ -114,7 +114,7 @@ const sendLDAPSearch = async function(client, user) {
 	const opts = {
 		filter: `(sAMAccountName=${user})`,
 		scope: 'sub',
-		attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName']
+		attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName', 'sAMAccountName', 'displayName', 'title']
 	};
 	const promise = new Promise(function(resolve, reject) {
 		client.search("DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG", opts, (err, res) => {
@@ -143,7 +143,7 @@ const handleLoginRequest = async function(client, user, pwd) {
 	const promise = new Promise(function(resolve, reject) {
 		client.bind(`${user}@mskcc.org`, pwd, function(err) {
 			if(err){
-				const errorMsg = `Failed to authenticate. Error: ${err.message}`;
+				const errorMsg = `Failed to authenticate user (${user}). Error: ${err.message}`;
 				logger.log("error", errorMsg);
 				reject(errorMsg);
 			}
@@ -188,7 +188,7 @@ const loadUser = async function(username, ldapResponse){
 	const loginDate = new Date();
 
 	if(user){
-		console.log(`Updating user: ${username}`);
+		logger.log("info", `Updating user: ${username}`);
 		user.set({
 			title,
 			groups: groups.join(','),
@@ -199,7 +199,7 @@ const loadUser = async function(username, ldapResponse){
 			loginLastDate: loginDate
 		});
 	} else {
-		console.log(`Adding new user: ${username}`);
+		logger.log("info", `Adding new user: ${username}`);
 		// New user - create new entry and add
 		user = new UserModel({
 			firstName: givenName,
@@ -233,9 +233,11 @@ const loadUser = async function(username, ldapResponse){
  * @returns {Object}
  */
 exports.login = [
-	body("userName").isLength({ min: 1 }).trim().withMessage("UserId must be specified.")
+	body("userName")
+		.isLength({ min: 1 }).trim().withMessage("UserId must be specified.")
 		.isAlphanumeric().withMessage("UserId must be alphanumeric"),
-	body("password").isLength({ min: 1 }).trim().withMessage("Password must be specified."),
+	body("password")
+		.isLength({ min: 1 }).trim().withMessage("Password must be specified."),
 	sanitizeBody("userName").escape(),
 	sanitizeBody("password").escape(),
 	async (req, res) => {
@@ -247,13 +249,11 @@ exports.login = [
 				const user = req.body.userName;
 				const pwd = req.body.password;
 
-				const ldapResponse = await handleLoginRequest(client, user, pwd)
-					.catch(
-						(err) => {throw new Error(err);}
-					);
+				logger.log("info", `Authenticating user: ${user}`);
+				const ldapResponse = await handleLoginRequest(client, user, pwd);
 				const userData  = await loadUser(user, ldapResponse);
 
-				//Prepare JWT token for authentication
+				// Successful login - prepare valid JWT token for future authentication
 				const jwtPayload = userData.toJSON();
 				cookieValidator.setJwtToken(res, jwtPayload);
 
@@ -261,6 +261,8 @@ exports.login = [
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {
+			const errorMsg = `Failed to authenticate. Error: ${err.message}`;
+			logger.log("error", errorMsg);
 			return apiResponse.ErrorResponse(res, "Failed login");
 		}
 	}];

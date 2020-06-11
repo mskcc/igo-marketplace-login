@@ -9,9 +9,10 @@ const {format} = winston;
 const {combine, label, json} = format;
 container.add(constants.logger, {
 	format: combine(
-		label({label: "Project-Tracker"}),
+		label({label: "Igo-Marketplace-Login"}),	// Added to log lines, e.g. { ..., "label":"Igo-Marketplace-Login"}
 		json()
 	),
+	// "error" will always be logged to console
 	transports: [new winston.transports.Console({level: "info"})]
 });
 
