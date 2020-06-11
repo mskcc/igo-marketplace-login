@@ -114,7 +114,7 @@ const sendLDAPSearch = async function(client, user) {
 	const opts = {
 		filter: `(sAMAccountName=${user})`,
 		scope: 'sub',
-		attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName']
+		attributes: ['dn', 'sn', 'cn', 'memberOf', 'title', 'givenName', 'sAMAccountName', 'displayName', 'title']
 	};
 	const promise = new Promise(function(resolve, reject) {
 		client.search("DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG", opts, (err, res) => {
@@ -139,22 +139,23 @@ const sendLDAPSearch = async function(client, user) {
 	return promise;
 };
 
-const handleLoginRequest = async function(client, user, pwd) {
+const sendLdapCredentials = async function(client, user, pwd) {
 	const promise = new Promise(function(resolve, reject) {
 		client.bind(`${user}@mskcc.org`, pwd, function(err) {
 			if(err){
-				const errorMsg = `Failed to authenticate. Error: ${err.message}`;
-				logger.log("error", errorMsg);
-				reject(errorMsg);
+				const errorMsg = `Failed bind to LDAP client (User: ${user}) - ${err.message}`;
+				reject(new Error(errorMsg));
 			}
 		});
 		sendLDAPSearch(client, user).then(
 			(resp) => {
 				resolve(resp);
 			}
-		)
+		).catch((err) => {
+			const errorMsg = `Failed to Retrieve LDAP response (User: ${user}) - ${err.message}`;
+			reject(new Error(errorMsg));
+		})
 	});
-
 	return promise;
 };
 
@@ -188,7 +189,7 @@ const loadUser = async function(username, ldapResponse){
 	const loginDate = new Date();
 
 	if(user){
-		console.log(`Updating user: ${username}`);
+		logger.log("info", `Updating user: ${username}`);
 		user.set({
 			title,
 			groups: groups.join(','),
@@ -199,7 +200,7 @@ const loadUser = async function(username, ldapResponse){
 			loginLastDate: loginDate
 		});
 	} else {
-		console.log(`Adding new user: ${username}`);
+		logger.log("info", `Adding new user: ${username}`);
 		// New user - create new entry and add
 		user = new UserModel({
 			firstName: givenName,
@@ -216,7 +217,7 @@ const loadUser = async function(username, ldapResponse){
 		});
 		user.save(function (err) {
 			if (err) {
-				throw err;
+				throw new Error(err.message);
 			}
 		});
 	}
@@ -233,9 +234,11 @@ const loadUser = async function(username, ldapResponse){
  * @returns {Object}
  */
 exports.login = [
-	body("userName").isLength({ min: 1 }).trim().withMessage("UserId must be specified.")
+	body("userName")
+		.isLength({ min: 1 }).trim().withMessage("UserId must be specified.")
 		.isAlphanumeric().withMessage("UserId must be alphanumeric"),
-	body("password").isLength({ min: 1 }).trim().withMessage("Password must be specified."),
+	body("password")
+		.isLength({ min: 1 }).trim().withMessage("Password must be specified."),
 	sanitizeBody("userName").escape(),
 	sanitizeBody("password").escape(),
 	async (req, res) => {
@@ -247,13 +250,11 @@ exports.login = [
 				const user = req.body.userName;
 				const pwd = req.body.password;
 
-				const ldapResponse = await handleLoginRequest(client, user, pwd)
-					.catch(
-						(err) => {throw new Error(err);}
-					);
+				logger.log("info", `Authenticating user: ${user}`);
+				const ldapResponse = await sendLdapCredentials(client, user, pwd);
 				const userData  = await loadUser(user, ldapResponse);
 
-				//Prepare JWT token for authentication
+				// Successful login - prepare valid JWT token for future authentication
 				const jwtPayload = userData.toJSON();
 				cookieValidator.setJwtToken(res, jwtPayload);
 
@@ -261,9 +262,34 @@ exports.login = [
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {
+			const errorMsg = `Authentication Failure: ${err.message}`;
+			logger.log("error", errorMsg);
 			return apiResponse.ErrorResponse(res, "Failed login");
 		}
 	}];
+
+/**
+ * User logout - clears token value so that future validation calls will fail
+ *
+ * @param {string}      email
+ * @param {string}      password
+ *
+ * @returns {Object}
+ */
+exports.logout = [
+	async (req, res) => {
+		try {
+			const cookie = cookieValidator.retrieveTokenFromCookie(req);
+			const username = cookie["username"] || "unknown_user";
+			logger.log("info", `Logging out user: ${username}`);
+			cookieValidator.clearToken(res);
+			apiResponse.successResponse(res, 'Successful logout');
+		} catch (err) {
+			logger.error("error", err.message);
+			return apiResponse.ErrorResponse(res, "Failed logout");
+		}
+	}];
+
 
 /**
  * Verify Confirm otp.
