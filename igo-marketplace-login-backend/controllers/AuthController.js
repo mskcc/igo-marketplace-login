@@ -139,22 +139,23 @@ const sendLDAPSearch = async function(client, user) {
 	return promise;
 };
 
-const handleLoginRequest = async function(client, user, pwd) {
+const sendLdapCredentials = async function(client, user, pwd) {
 	const promise = new Promise(function(resolve, reject) {
 		client.bind(`${user}@mskcc.org`, pwd, function(err) {
 			if(err){
-				const errorMsg = `Failed to authenticate user (${user}). Error: ${err.message}`;
-				logger.log("error", errorMsg);
-				reject(errorMsg);
+				const errorMsg = `Failed bind to LDAP client (User: ${user}) - ${err.message}`;
+				reject(new Error(errorMsg));
 			}
 		});
 		sendLDAPSearch(client, user).then(
 			(resp) => {
 				resolve(resp);
 			}
-		)
+		).catch((err) => {
+			const errorMsg = `Failed to Retrieve LDAP response (User: ${user}) - ${err.message}`;
+			reject(new Error(errorMsg));
+		})
 	});
-
 	return promise;
 };
 
@@ -216,7 +217,7 @@ const loadUser = async function(username, ldapResponse){
 		});
 		user.save(function (err) {
 			if (err) {
-				throw err;
+				throw new Error(err.message);
 			}
 		});
 	}
@@ -250,7 +251,8 @@ exports.login = [
 				const pwd = req.body.password;
 
 				logger.log("info", `Authenticating user: ${user}`);
-				const ldapResponse = await handleLoginRequest(client, user, pwd);
+				const ldapResponse = sendLdapCredentials(client, user, pwd);
+				await ldapResponse;
 				const userData  = await loadUser(user, ldapResponse);
 
 				// Successful login - prepare valid JWT token for future authentication
@@ -261,7 +263,7 @@ exports.login = [
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {
-			const errorMsg = `Failed to authenticate. Error: ${err.message}`;
+			const errorMsg = `Authentication Failure: ${err.message}`;
 			logger.log("error", errorMsg);
 			return apiResponse.ErrorResponse(res, "Failed login");
 		}
