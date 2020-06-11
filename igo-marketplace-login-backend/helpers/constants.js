@@ -6,7 +6,7 @@ exports.constants = {
 	confirmEmails: {
 		from : "no-reply@test-app.com"
 	},
-	logger: "project-tracker",
+	logger: "igo-marketplace-login",		// Internal label (not logged)
 	LDAP: {
 		MEMBER_OF: 'memberOf',
 		TITLE: 'title',
