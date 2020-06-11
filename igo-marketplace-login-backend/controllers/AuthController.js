@@ -276,10 +276,14 @@ exports.login = [
 exports.logout = [
 	async (req, res) => {
 		try {
+			const cookie = cookieValidator.retrieveTokenFromCookie(req);
+			const username = cookie["username"] || "unknown_user";
+			logger.log("info", `Logging out user: ${username}`);
 			cookieValidator.clearToken(res);
-			apiResponse.successResponse(res, 'Successful login');
+			apiResponse.successResponse(res, 'Successful logout');
 		} catch (err) {
-			return apiResponse.ErrorResponse(res, "Failed login");
+			logger.error("error", err.message);
+			return apiResponse.ErrorResponse(res, "Failed logout");
 		}
 	}];
 
