@@ -22,7 +22,7 @@ exports.ErrorResponse = function (res, msg) {
 		status: 0,
 		message: msg,
 	};
-	logger.log("error", msg);
+	logger.log("error", `User Response: ${msg}`);
 	return res.status(500).json(data);
 };
 
@@ -31,7 +31,7 @@ exports.notFoundResponse = function (res, msg) {
 		status: 0,
 		message: msg,
 	};
-	logger.log("error", msg);
+	logger.log("error", `User Response: ${msg}`);
 	return res.status(404).json(data);
 };
 
@@ -41,7 +41,7 @@ exports.validationErrorWithData = function (res, msg, data) {
 		message: msg,
 		data: data
 	};
-	logger.log("error", msg);
+	logger.log("error", `User Response: ${msg}`);
 	return res.status(400).json(resData);
 };
 
@@ -50,6 +50,6 @@ exports.unauthorizedResponse = function (res, msg) {
 		status: 0,
 		message: msg,
 	};
-	logger.log("error", msg);
+	logger.log("error", `User Response: ${msg}`);
 	return res.status(401).json(data);
 };
