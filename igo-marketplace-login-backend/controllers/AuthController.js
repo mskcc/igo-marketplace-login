@@ -258,7 +258,7 @@ exports.login = [
 				const jwtPayload = userData.toJSON();
 				cookieValidator.setJwtToken(res, jwtPayload);
 
-				logger.log("info", `JWT token set. Sending successful login response: ${user}`);
+				logger.log("info", `JWT token set. Sending successful login response for User: ${user}`);
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {
