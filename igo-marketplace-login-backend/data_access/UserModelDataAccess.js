@@ -8,7 +8,7 @@ const { logger } = require('../helpers/winston');
  */
 exports.retrieveUserData = function(searchObj) {
   // Populate UserModel fields present in the search Object
-  const fields = ['firstName', 'lastName', 'username', 'title'];
+  const fields = ['firstName', 'lastName', 'username', 'title'];  // NOTE - these fields should be present in the cookie
   const query = {};
   let val;
   for(let field of fields){
