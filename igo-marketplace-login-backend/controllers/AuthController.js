@@ -266,7 +266,7 @@ exports.login = [
 
 				// Log cookie size to verify nginx buffer_size will not be exceeded
 				const jwtPayloadString = JSON.stringify(jwtPayload);
-				logger.log("info", `JWT Token Set: ${jwtPayloadString.length} characters, ${Buffer.byteLength(jwtPayloadString, 'utf8')} bytes. Sending successful login response for User: ${user}`);
+				logger.log("info", `JWT Token Set: ${Buffer.byteLength(jwtPayloadString, 'utf8')} bytes. Sending successful login response for User: ${user}`);
 
 				apiResponse.successResponse(res, 'Successful login');
 			}
