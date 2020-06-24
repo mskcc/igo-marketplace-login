@@ -254,11 +254,20 @@ exports.login = [
 				const ldapResponse = await sendLdapCredentials(client, user, pwd);
 				const userData  = await loadUser(user, ldapResponse);
 
-				// Successful login - prepare valid JWT token for future authentication
+				// Redact fields, groups especially can be very large and result in nginx header issues.
 				const jwtPayload = userData.toJSON();
+				delete jwtPayload.groups;
+				delete jwtPayload.loginFirstDate;
+				delete jwtPayload.createdAt;
+				delete jwtPayload.updatedAt;
+
+				// Successful login - prepare valid JWT token for future authentication
 				cookieValidator.setJwtToken(res, jwtPayload);
 
-				logger.log("info", `JWT token set. Sending successful login response for User: ${user}`);
+				// Log cookie size to verify nginx buffer_size will not be exceeded
+				const jwtPayloadString = JSON.stringify(jwtPayload);
+				logger.log("info", `JWT Token Set: ${Buffer.byteLength(jwtPayloadString, 'utf8')} bytes. Sending successful login response for User: ${user}`);
+
 				apiResponse.successResponse(res, 'Successful login');
 			}
 		} catch (err) {
