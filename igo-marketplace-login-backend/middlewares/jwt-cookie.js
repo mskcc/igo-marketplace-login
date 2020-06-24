@@ -1,5 +1,7 @@
 const jwtInCookie = require('jwt-in-cookie');
 const apiResponse = require('../helpers/apiResponse');
+const { logger } = require("../helpers/winston");
+
 exports.authenticateRequest = function(req, res, next) {
   if(process.env.ENV === 'QA') {
     next();
@@ -8,7 +10,8 @@ exports.authenticateRequest = function(req, res, next) {
   try {
     jwtInCookie.validateJwtToken(req);
   } catch(err){
-    return apiResponse.AuthenticationErrorResponse(res,  'Not authorized - please log in');
+    logger.log("error", err.message);
+    return apiResponse.unauthorizedResponse(res,  'Not authorized - please log in');
   }
   next();
 };
