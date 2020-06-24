@@ -8,7 +8,7 @@ const { logger } = require("../helpers/winston");
  * 
  * @returns {Object}
  */
-exports.retrieveUserGroups = [
+exports.retrieveUserData = [
 	authenticateRequest,
 	async function (req, res) {
 		const cookie = getCookie(req);
