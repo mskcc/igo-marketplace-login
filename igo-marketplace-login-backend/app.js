@@ -1,11 +1,10 @@
-const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
-const indexRouter = require('./routes/index');
-const apiRouter = require('./routes/api');
-const apiResponse = require('./helpers/apiResponse');
-const cors = require('cors');
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const indexRouter = require("./routes/index");
+const apiRouter = require("./routes/api");
+const apiResponse = require("./helpers/apiResponse");
+const cors = require("cors");
 
 const jwtInCookie = require('jwt-in-cookie');
 jwtInCookie.configure({secret: process.env.JWT_SECRET});
