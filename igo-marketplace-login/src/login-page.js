@@ -55,7 +55,7 @@ function LoginPage(props) {
 
     const [username, setUserName] = useState('');
     const [password, setPassword] = useState('');
-    const [prompt, setPrompt] = useState('Please enter your login details below');
+    const [prompt, setPrompt] = useState('Please enter your login details below.');
 
     const changeUserName = (evt) => {
         const userName = evt.target.value;
@@ -92,7 +92,7 @@ function LoginPage(props) {
                     <div className={"block"}>
                         <TextField required
                                    id="standard-required"
-                                   label="Required"
+                                   label="MSK Username"
                                    value={username} onChange={changeUserName}/>
                     </div>
                     <div className={"block"}>
