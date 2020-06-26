@@ -15,6 +15,7 @@
   },
   "scripts": {
     "start": "npm run config-dev && react-scripts start",
+    "lint": "./node_modules/.bin/eslint --fix .",
     "build": "react-scripts build",
     "config-qa": "cp ./src/config.qa.js ./src/config.js",
     "config-dev": "cp ./src/config.dev.js ./src/config.js",
@@ -31,6 +32,7 @@
       "not op_mini all"
     ],
     "development": [
+      "ie 11",
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"

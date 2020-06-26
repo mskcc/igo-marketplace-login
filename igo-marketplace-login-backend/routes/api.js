@@ -1,10 +1,10 @@
-var express = require("express");
-var authRouter = require("./auth");
-var bookRouter = require("./book");
+var express = require('express');
+var authRouter = require('./auth');
+var sessionRouter = require('./session');
 
 var app = express();
 
-app.use("/auth/", authRouter);
-app.use("/book/", bookRouter);
+app.use('/auth/', authRouter);
+app.use('/session/', sessionRouter);
 
 module.exports = app;
