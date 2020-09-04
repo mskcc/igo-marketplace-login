@@ -12,6 +12,11 @@ const USER = constants.LDAP.USER;
 const MEMBER_OF = constants.LDAP.MEMBER_OF;
 
 const getRolesForGroup = (group) => {
+  // Lab Member - MemberOf: "zzPDL_CMO_IGO"
+  // Admin - MemberOf: "zzPDL_SKI_IGO_DATA"
+  // PM - MemberOf: zzPDL_SKI_CMOPM
+  // Splunk - MemberOf: zzPDL_CMO_Splunk
+  // User - All others
   const roles = [];
   const ROLES = [
     [PM_GROUP, PM],
@@ -80,23 +85,4 @@ exports.getGroups = (ldapResult) => {
     }
   }
   return groups;
-};
-
-/**
- * Returns the role that the user belongs to based on their LDAP result
- *
- * @param ldapResult
- */
-exports.getRole = (ldapResult) => {
-  // Lab Member - MemberOf: "zzPDL_CMO_IGO"
-  // Admin - MemberOf: "zzPDL_SKI_IGO_DATA"
-  // PM - MemberOf: zzPDL_SKI_CMOPM
-  // Splunk - MemberOf: zzPDL_CMO_Splunk
-  // User - All others
-
-  const memberOf = ldapResult[MEMBER_OF] || [];
-
-  const roles = new Set([]);
-
-  return ldapResult;
 };
