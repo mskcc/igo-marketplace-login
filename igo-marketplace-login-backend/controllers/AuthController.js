@@ -146,8 +146,8 @@ const loadUser = async function(username, ldapResponse){
  */
 exports.login = [
 	body("userName")
-		.isLength({ min: 1 }).trim().withMessage("UserId must be specified.")
-		.isAlphanumeric().withMessage("UserId must be alphanumeric"),
+		.isLength({ min: 1 }).trim().withMessage("userName must be specified.")
+		.isAlphanumeric().withMessage("userName must be alphanumeric"),
 	body("password")
 		.isLength({ min: 1 }).trim().withMessage("Password must be specified."),
 	sanitizeBody("userName").escape(),
@@ -156,7 +156,7 @@ exports.login = [
 		try {
 			const errors = validationResult(req);
 			if (!errors.isEmpty()) {
-				return apiResponse.validationErrorWithData(res, "Failed login", errors.array());
+				return apiResponse.validationErrorWithData(res, "Invalid userName/password", errors.array());
 			}else {
 				const user = req.body.userName;
 				const pwd = req.body.password;
@@ -184,7 +184,7 @@ exports.login = [
 		} catch (err) {
 			const errorMsg = `Authentication Failure: ${err.message}`;
 			logger.log("error", errorMsg);
-			return apiResponse.ErrorResponse(res, "Failed login");
+			return apiResponse.unauthorizedResponse(res, "Failed login");
 		}
 	}];
 
