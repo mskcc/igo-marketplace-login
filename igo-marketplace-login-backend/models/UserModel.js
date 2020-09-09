@@ -6,12 +6,13 @@ var UserSchema = new mongoose.Schema({
   username: {type: String, required: true},
   title: {type: String, required: true},
   groups: {type: String, required: true},
-  isLabMember: {type: Boolean, required: true},
-  isAdmin: {type: Boolean, required: true},
-  isPM: {type: Boolean, required: true},
-  isUser: {type: Boolean, required: true},
   loginFirstDate: {type: Date, required: true},
   loginLastDate: {type: Date, required: true},
+  /* ROLE MEMBERSHIP - Determined by the zzPDL groups the user belongs to (see constants.js( */
+  isLabMember: {type: Boolean, required: true},   // constants.js: LAB_MEMBER_GROUP
+  isAdmin: {type: Boolean, required: true},       // constants.js: ADMIN_GROUP
+  isPM: {type: Boolean, required: true},          // constants.js: PM_GROUP
+  isUser: {type: Boolean, required: true},        // If user isn't a PM, Admin, or Lab Member, they are a user
 }, {timestamps: true});
 
 // Virtual for user's full name
