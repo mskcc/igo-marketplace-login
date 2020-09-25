@@ -7,9 +7,6 @@ build-fe:
 build-be:
 	cd igo-marketplace-login-backend && npm install && npm run test && rm -rf node_modules && cd -
 
-test:
-	cd igo-marketplace-login-backend && npm run test && cd -
-
 move-fe:
 	rm -rf igo-marketplace-login-backend/public && cp -rf igo-marketplace-login/build/ igo-marketplace-login-backend/public/
 
