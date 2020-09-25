@@ -4,14 +4,16 @@ const cookieValidator = require("jwt-in-cookie");
 
 const UserModel = require("../models/UserModel");
 const apiResponse = require("../helpers/apiResponse");
-const { constants } = require("../helpers/constants");
+const { constants } = require("../helpers/constants");9
 const { logger } = require("../helpers/winston");
 const {
 	getRoles,
 	getGroups,
 	getSurname,
 	getGivenName,
-	getTitle } = require('../helpers/ldapUtil');
+	getTitle,
+	retrieveHierarchy,
+	hasValidHierarchy} = require('../helpers/ldapUtil');
 
 const client = ldap.createClient({
 	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
@@ -89,7 +91,7 @@ const getExistingUser = async function(username) {
 	return results[0];
 };
 
-const loadUser = async function(username, ldapResponse){
+const loadUser = async function(username, password, ldapResponse){
 	let user = await getExistingUser(username);
 
 	const groups = getGroups(ldapResponse);
@@ -101,7 +103,7 @@ const loadUser = async function(username, ldapResponse){
 
 	if(user){
 		logger.log("info", `Updating user: ${username}`);
-		user.set({
+		const updatedUser = {
 			title,
 			groups: groups.join(','),
 			isLabMember: roles.has(constants.LDAP.LAB_MEMBER),
@@ -109,10 +111,31 @@ const loadUser = async function(username, ldapResponse){
 			isPM: roles.has(constants.LDAP.PM),
 			isUser: roles.has(constants.LDAP.USER),
 			loginLastDate: loginDate
-		});
+		};
+
+		// Check if the User instance is missing the hierarchy and update it if necessary
+		if(!hasValidHierarchy(username, user)){
+			logger.info(`Adding hierarchy to user: ${username}`);
+			const hierarchy = await retrieveHierarchy(client, username, password);
+			updatedUser['hierarchy'] = hierarchy;
+			UserModel.update(
+				{ username: username },
+				updatedUser,
+				{ multi: true },
+				function(err, numberAffected){
+					logger.error(err);
+				}
+			);
+		} else {
+			user.set(updatedUser);
+		}
 	} else {
+		logger.info(`Retrieving hierarchy for user: ${username}`);
+		const hierarchy = await retrieveHierarchy(client, username, password);
+
 		logger.log("info", `Adding new user: ${username}`);
 		// New user - create new entry and add
+
 		user = new UserModel({
 			firstName: givenName,
 			lastName: surname,
@@ -124,7 +147,8 @@ const loadUser = async function(username, ldapResponse){
 			isPM: roles.has(constants.LDAP.PM),
 			isUser: roles.has(constants.LDAP.USER),
 			loginFirstDate: loginDate,
-			loginLastDate: loginDate
+			loginLastDate: loginDate,
+			hierarchy: hierarchy
 		});
 		user.save(function (err) {
 			if (err) {
@@ -163,7 +187,8 @@ exports.login = [
 
 				logger.log("info", `Authenticating user: ${user}`);
 				const ldapResponse = await sendLdapCredentials(client, user, pwd);
-				const userData  = await loadUser(user, ldapResponse);
+
+				const userData  = await loadUser(user, pwd, ldapResponse);
 
 				// Redact fields, groups especially can be very large and result in nginx header issues.
 				const jwtPayload = userData.toJSON();

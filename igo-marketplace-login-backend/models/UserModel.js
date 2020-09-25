@@ -13,6 +13,7 @@ var UserSchema = new mongoose.Schema({
   isAdmin: {type: Boolean, required: true},       // constants.js: ADMIN_GROUP
   isPM: {type: Boolean, required: true},          // constants.js: PM_GROUP
   isUser: {type: Boolean, required: true},        // If user isn't a PM, Admin, or Lab Member, they are a user
+  hierarchy: {type: Object, required: true}
 }, {timestamps: true});
 
 // Virtual for user's full name
