@@ -14,11 +14,9 @@
     "react-scripts": "3.4.0"
   },
   "scripts": {
-    "start": "npm run config-dev && react-scripts start",
+    "start": "REACT_APP_ENV=dev react-scripts start",
     "lint": "./node_modules/.bin/eslint --fix .",
     "build": "react-scripts build",
-    "config-qa": "cp ./src/config.qa.js ./src/config.js",
-    "config-dev": "cp ./src/config.dev.js ./src/config.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
