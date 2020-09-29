@@ -175,7 +175,7 @@ exports.login = [
 	body("password")
 		.isLength({ min: 1 }).trim().withMessage("Password must be specified."),
 	sanitizeBody("userName").escape(),
-	sanitizeBody("password").escape(),
+	// Do NOT sanitize the password, e.g. "hi<>world" => "hi&lt;&gt;world"
 	async (req, res) => {
 		try {
 			const errors = validationResult(req);
