@@ -8,7 +8,7 @@ cd igo-marketplace-login && npm run start
 ```
 ### Backend
 ```
-cd igo-marketplace-login-backens && npm run dev
+cd igo-marketplace-login-backend && npm run dev
 ```
 
 ### Backend
