@@ -148,6 +148,7 @@ exports.bindClient = function(client, user, pwd) {
     /**
     * Simple bind - Below excludes some users, e.g. "weigeltb"
     *    const dn=`CN=${userName},OU=Sloan Kettering Institute,OU=SKI,DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG`;
+    *       - Won't work for members with a department that isn't "Sloan Kettering", e.g. "Pathology"
     */
     logger.info(`Binding ${user} to client`);
     const promise = new Promise(async function(resolve, reject) {
