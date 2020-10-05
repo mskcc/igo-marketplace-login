@@ -141,6 +141,29 @@ const populateUserDataFromUserName = async function(client, userName) {
   return promise;
 };
 
+/**
+ * Binds target user to singleton LDAP client for queries
+ */
+exports.bindClient = function(client, user, pwd) {
+    /**
+    * Simple bind - Below excludes some users, e.g. "weigeltb"
+    *    const dn=`CN=${userName},OU=Sloan Kettering Institute,OU=SKI,DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG`;
+    *       - Won't work for members with a department that isn't "Sloan Kettering", e.g. "Pathology"
+    */
+    logger.info(`Binding ${user} to client`);
+    const promise = new Promise(async function(resolve, reject) {
+        client.bind(`${user}@mskcc.org`, pwd, function(err) {
+            if(err){
+                const errorMsg = `Failed bind to LDAP client (User: ${user}) - ${err.message}`;
+                reject(new Error(errorMsg));
+            }
+            logger.info(`Successful Bind: ${user}`);
+            resolve();
+        });
+    });
+    return promise;
+}
+
 exports.hasValidHierarchy = function(username, user) {
   const hierarchy = user["hierarchy"];
   if(hierarchy && hierarchy.length > 0){
@@ -162,15 +185,7 @@ exports.hasValidHierarchy = function(username, user) {
  * @param req
  * @returns [] - list of hierarchy objects containing data of managers
  */
-exports.retrieveHierarchy = function(client, userName, password) {
-  const dn=`CN=${userName},OU=Sloan Kettering Institute,OU=SKI,DC=MSKCC,DC=ROOT,DC=MSKCC,DC=ORG`;
-  client.bind(dn, password, function(err) {
-    if(err){
-      const errorMsg = `Failed bind to LDAP client (User: ${userName}) - ${err.message}`;
-      logger.error(errorMsg);
-    }
-  });
-
+exports.retrieveHierarchy = function(client, userName) {
   const promise = new Promise(async function(resolve, reject) {
     if(userName) {
       const user = await populateUserDataFromUserName(client, userName);

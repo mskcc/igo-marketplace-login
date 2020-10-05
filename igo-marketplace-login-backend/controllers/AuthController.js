@@ -13,7 +13,8 @@ const {
 	getGivenName,
 	getTitle,
 	retrieveHierarchy,
-	hasValidHierarchy} = require('../helpers/ldapUtil');
+	hasValidHierarchy,
+	bindClient } = require('../helpers/ldapUtil');
 
 const client = ldap.createClient({
 	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
@@ -52,14 +53,8 @@ const sendLDAPSearch = async function(client, user) {
 	return promise;
 };
 
-const sendLdapCredentials = async function(client, user, pwd) {
+const sendLdapCredentials = async function(client, user) {
 	const promise = new Promise(function(resolve, reject) {
-		client.bind(`${user}@mskcc.org`, pwd, function(err) {
-			if(err){
-				const errorMsg = `Failed bind to LDAP client (User: ${user}) - ${err.message}`;
-				reject(new Error(errorMsg));
-			}
-		});
 		sendLDAPSearch(client, user).then(
 			(resp) => {
 				resolve(resp);
@@ -91,7 +86,7 @@ const getExistingUser = async function(username) {
 	return results[0];
 };
 
-const loadUser = async function(username, password, ldapResponse){
+const loadUser = async function(client, username, ldapResponse){
 	let user = await getExistingUser(username);
 
 	const groups = getGroups(ldapResponse);
@@ -116,7 +111,7 @@ const loadUser = async function(username, password, ldapResponse){
 		// Check if the User instance is missing the hierarchy and update it if necessary
 		if(!hasValidHierarchy(username, user)){
 			logger.info(`Adding hierarchy to user: ${username}`);
-			const hierarchy = await retrieveHierarchy(client, username, password);
+			const hierarchy = await retrieveHierarchy(client, username);
 			updatedUser['hierarchy'] = hierarchy;
 			UserModel.update(
 				{ username: username },
@@ -131,7 +126,7 @@ const loadUser = async function(username, password, ldapResponse){
 		}
 	} else {
 		logger.info(`Retrieving hierarchy for user: ${username}`);
-		const hierarchy = await retrieveHierarchy(client, username, password);
+		const hierarchy = await retrieveHierarchy(client, username);
 
 		logger.log("info", `Adding new user: ${username}`);
 		// New user - create new entry and add
@@ -185,10 +180,10 @@ exports.login = [
 				const user = req.body.userName;
 				const pwd = req.body.password;
 
-				logger.log("info", `Authenticating user: ${user}`);
-				const ldapResponse = await sendLdapCredentials(client, user, pwd);
-
-				const userData  = await loadUser(user, pwd, ldapResponse);
+                logger.info(`Authenticating user: ${user}`);
+                await bindClient(client, user, pwd);
+				const ldapResponse = await sendLdapCredentials(client, user);
+				const userData  = await loadUser(client, user, ldapResponse);
 
 				// Redact fields, groups especially can be very large and result in nginx header issues.
 				const jwtPayload = userData.toJSON();
