@@ -113,16 +113,10 @@ const loadUser = async function(client, username, ldapResponse){
 			logger.info(`Adding hierarchy to user: ${username}`);
 			const hierarchy = await retrieveHierarchy(client, username);
 			updatedUser['hierarchy'] = hierarchy;
-			UserModel.update(
-				{ username: username },
-				updatedUser,
-				{ multi: true },
-				function(err, numberAffected){
-					logger.error(err);
-				}
-			);
+			updateUser(username, updatedUser)
 		} else {
-			user.set(updatedUser);
+			logger.info(`Regular update: ${username}`);
+            updateUser(username, updatedUser)
 		}
 	} else {
 		logger.info(`Retrieving hierarchy for user: ${username}`);
@@ -154,6 +148,25 @@ const loadUser = async function(client, username, ldapResponse){
 
 	return user;
 };
+
+/**
+ * Updates the document of the given userName w/ the updated data
+ *
+ * @param username, string - user document identifier
+ * @param updatedUser, object - data to update User document
+ */
+const updateUser = function(username, updatedUser){
+    UserModel.updateOne(
+            { username: username },
+            updatedUser,
+            { multi: true },
+            function(err, numberAffected){
+                if(err) {
+                    logger.error(`Error updating user ${username}: ${err}`);
+                }
+            }
+    );
+}
 
 /**
  * User login.
