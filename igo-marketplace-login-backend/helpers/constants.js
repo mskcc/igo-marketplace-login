@@ -19,7 +19,7 @@ exports.constants = {
     PM: 'pm',
     USER: 'user',
 
-    LAB_MEMBER_GROUP: 'zzPDL_CMO_IGO',
+    LAB_MEMBER_GROUP: 'zzPDL_IGO_Staff',
     ADMIN_GROUP: 'zzPDL_SKI_IGO_DATA',
     PM_GROUP: 'zzPDL_SKI_CMOPM'
   }
