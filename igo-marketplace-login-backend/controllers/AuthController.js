@@ -23,6 +23,10 @@ const client = ldap.createClient({
 		rejectUnauthorized: false
 	}
 });
+// REF - https://github.com/ldapjs/node-ldapjs/issues/318#issuecomment-165769581
+client.on('error', function(err) {
+    console.warn('LDAP connection failed, but fear not, it will reconnect OK', err);
+});
 
 const sendLDAPSearch = async function(client, user) {
 	const opts = {
