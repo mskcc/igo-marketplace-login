@@ -18,10 +18,11 @@ const {
 
 const client = ldap.createClient({
 	url: 'ldaps://mskcc.root.mskcc.org/', // Error: connect ECONNREFUSED 23.202.231.169:636
-	// url: 'ldaps://ldapha.mskcc.root.mskcc.org/'	// Error: getaddrinfo ENOTFOUND ldapha.mskcc.root.mskcc.org
+	// url: 'ldaps://ldapha.mskcc.root.mskcc.org/',	// Error: getaddrinfo ENOTFOUND ldapha.mskcc.root.mskcc.org
 	tlsOptions: {
 		rejectUnauthorized: false
-	}
+	},
+    reconnect: true
 });
 // REF - https://github.com/ldapjs/node-ldapjs/issues/318#issuecomment-165769581
 client.on('error', function(err) {
