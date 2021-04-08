@@ -85,7 +85,7 @@ const getExistingUser = async function(username) {
 		return null;
 	} else if(results.length > 1){
 		// Only one result should be returned for a username
-		throw new Error(`Unable to resolve single user: ${username}`);
+		logger.error(`Unable to resolve single user: ${username}. Returning the first one`);
 	}
 
 	return results[0];
