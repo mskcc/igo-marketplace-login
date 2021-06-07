@@ -195,7 +195,7 @@ exports.login = [
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Invalid userName/password", errors.array());
 			}else {
-				const user = req.body.userName;
+				const user = req.body.userName.toLowerCase();
 				const pwd = req.body.password;
 
                 logger.info(`Authenticating user: ${user}`);
