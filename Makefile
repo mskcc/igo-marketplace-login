@@ -10,6 +10,14 @@ build-be:
 move-fe:
 	rm -rf igo-marketplace-login-backend/public && cp -rf igo-marketplace-login/build/ igo-marketplace-login-backend/public/
 
+install:
+	ssh $(HOST) 'dzdo -S rm -rf /srv/www/igo-marketplace-login && mv ~/deployments/igo-marketplace-login/ /srv/www && cd /srv/www/igo-marketplace-login && npm install && dzdo pm2 restart login'
+
+test_host:
+	if [[ "$(HOST)" != "" ]]; then echo "Deploying to $(HOST)"; else printf "\nPlease specify HOST, e.g.\n\t'make HOST=igo.mskcc.org deploy'\n\n" && exit 1; fi
+
 deploy:
+	make HOST=$(HOST) test_host && \
 	make ENV=$(ENV) build && \
-	scp -r igo-marketplace-login-backend $(HOST):deployments/igo-marketplace-login
+	scp -r igo-marketplace-login-backend $(HOST):deployments/igo-marketplace-login && \
+	make HOST=$(HOST) install
