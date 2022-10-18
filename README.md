@@ -2,7 +2,7 @@
 Centralized CAS for IGO applications
 
 ## Development
-After setting up the `backend` and `frontend`, the login application should be available at `localhost:3000`
+After installing MongoDB https://www.mongodb.com/docs/manual/administration/install-community/ and setting up the `backend` and `frontend`, the login application should be available at `localhost:3000`
 
 ### Frontend
 ```
