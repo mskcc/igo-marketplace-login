@@ -75,7 +75,7 @@ function LoginPage(props) {
         setPrompt('Logging in...');
         sendLoginRequest(username, password).then(() => {
             setPrompt('Login Successful');
-            // stupid special case for POC moving request tracker to AWS 
+            // special case for POC moving request tracker to AWS
             if (redirectPath === 'request-tracker') {
                 window.location.href = 'https://igo.dev.aws.mskcc.org/request-tracker'
             } else {
