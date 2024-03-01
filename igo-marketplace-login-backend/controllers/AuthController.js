@@ -213,11 +213,12 @@ exports.login = [
 				// Successful login - prepare valid JWT token for future authentication
 				cookieValidator.setJwtToken(res, jwtPayload);
 
-				logger.info(`RESPONSE: ${res}`);
-				logger.info(`jwtPayload: ${jwtPayload}`);
+				logger.info(`RESPONSE: ${JSON.stringify(res)}`);
 				
 				// Log cookie size to verify nginx buffer_size will not be exceeded
 				const jwtPayloadString = JSON.stringify(jwtPayload);
+				logger.info(`jwtPayload: ${jwtPayloadString}`);
+
 				logger.log("info", `JWT Token Set: ${Buffer.byteLength(jwtPayloadString, 'utf8')} bytes. Sending successful login response for User: ${user}`);
 
 				apiResponse.successResponse(res, 'Successful login');
