@@ -190,9 +190,6 @@ exports.login = [
 	sanitizeBody("userName").escape(),
 	// Do NOT sanitize the password, e.g. "hi<>world" => "hi&lt;&gt;world"
 	async (req, res) => {
-		const stringifyres = JSON.stringify(res);
-		logger.info(`RESPONSE: ${stringifyres}`);
-
 		try {
 			const errors = validationResult(req);
 			if (!errors.isEmpty()) {
