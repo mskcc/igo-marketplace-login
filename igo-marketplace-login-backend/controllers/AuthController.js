@@ -211,7 +211,7 @@ exports.login = [
 				delete jwtPayload.updatedAt;
 
 				// Successful login - prepare valid JWT token for future authentication
-				cookieValidator.setJwtToken(res, jwtPayload);
+				// cookieValidator.setJwtToken(res, jwtPayload);
 
 				logger.info(`RESPONSE: ${JSON.stringify(res)}`);
 				
