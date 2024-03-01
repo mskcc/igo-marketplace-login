@@ -211,9 +211,9 @@ exports.login = [
 				delete jwtPayload.updatedAt;
 
 				// Successful login - prepare valid JWT token for future authentication
-				// cookieValidator.setJwtToken(res, jwtPayload);
+				cookieValidator.setJwtToken(res, jwtPayload);
 
-				logger.info(`RESPONSE: ${JSON.stringify(res)}`);
+				// logger.info(`RESPONSE: ${JSON.stringify(res)}`);
 				
 				// Log cookie size to verify nginx buffer_size will not be exceeded
 				const jwtPayloadString = JSON.stringify(jwtPayload);
