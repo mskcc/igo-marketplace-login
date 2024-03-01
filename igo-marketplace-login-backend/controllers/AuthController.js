@@ -190,6 +190,9 @@ exports.login = [
 	sanitizeBody("userName").escape(),
 	// Do NOT sanitize the password, e.g. "hi<>world" => "hi&lt;&gt;world"
 	async (req, res) => {
+		const stringifyres = JSON.stringify(res);
+		logger.info(`RESPONSE: ${stringifyres}`);
+
 		try {
 			const errors = validationResult(req);
 			if (!errors.isEmpty()) {
@@ -213,12 +216,9 @@ exports.login = [
 				// Successful login - prepare valid JWT token for future authentication
 				cookieValidator.setJwtToken(res, jwtPayload);
 
-				// logger.info(`RESPONSE: ${JSON.stringify(res)}`);
 				
 				// Log cookie size to verify nginx buffer_size will not be exceeded
 				const jwtPayloadString = JSON.stringify(jwtPayload);
-				logger.info(`jwtPayload: ${jwtPayloadString}`);
-
 				logger.log("info", `JWT Token Set: ${Buffer.byteLength(jwtPayloadString, 'utf8')} bytes. Sending successful login response for User: ${user}`);
 
 				apiResponse.successResponse(res, 'Successful login');
