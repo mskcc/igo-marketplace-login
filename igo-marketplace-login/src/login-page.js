@@ -92,7 +92,7 @@ function LoginPage(props) {
                     <div className={"block"}>
                         <TextField required
                                    id="standard-required"
-                                   label="Required"
+                                   label="Username"
                                    value={username} onChange={changeUserName}/>
                     </div>
                     <div className={"block"}>

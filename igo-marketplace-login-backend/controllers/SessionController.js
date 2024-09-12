@@ -6,6 +6,7 @@ const { logger } = require("../helpers/winston");
 /**
  * Retrieves the user groups saved for the user in the DB
  * 
+ *
  * @returns {Object}
  */
 exports.retrieveUserData = [
@@ -13,7 +14,7 @@ exports.retrieveUserData = [
 	async function (req, res) {
 		const cookie = getCookie(req);
 		let userData = null;
-		try {
+		try{
 			userData = await retrieveUserData(cookie);
 		} catch(err) {
 			logger.log("error", `Database Query Failed: ${err.message}`);
