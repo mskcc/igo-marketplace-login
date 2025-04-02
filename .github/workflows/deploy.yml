@@ -1,10 +1,9 @@
-
 name: CI/CD Pipeline for IGO Marketplace Login
 
 on:
   pull_request:
     types: [closed]
-    branches: [main]  # Auto-deploy to DEV when PR is merged to main
+    branches: [master]  # ✅ Fix: matches your actual default branch
 
   workflow_dispatch:  # Manual trigger for PROD
     inputs:
@@ -21,7 +20,7 @@ jobs:
   deploy-to-dev:
     name: Deploy to DEV (`dlviigoapps1`)
     runs-on: self-hosted
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     environment: dev
 
     steps:
@@ -76,10 +75,10 @@ jobs:
           cd /prep/deployments/igo-marketplace-login
           git pull
 
-          # Make sure we’re on main branch
+          # Make sure we’re on master branch
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$CURRENT_BRANCH" != "main" ]]; then
-            echo "❌ You can only deploy 'main' branch to PROD."
+          if [[ "$CURRENT_BRANCH" != "master" ]]; then
+            echo "❌ You can only deploy 'master' branch to PROD."
             exit 1
           fi
 
