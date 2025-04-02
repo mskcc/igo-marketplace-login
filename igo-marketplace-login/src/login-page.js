@@ -55,7 +55,7 @@ function LoginPage(props) {
 
     const [username, setUserName] = useState('');
     const [password, setPassword] = useState('');
-    const [prompt, setPrompt] = useState('Please Enter your Login details below');
+    const [prompt, setPrompt] = useState('Please Enter your login details below');
 
     const changeUserName = (evt) => {
         const userName = evt.target.value;
