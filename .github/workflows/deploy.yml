@@ -3,8 +3,7 @@ name: CI/CD Pipeline for IGO Marketplace Login
 on:
   pull_request:
     types: [closed]
-    branches: [master]  # ✅ Fix: matches your actual default branch
-
+    branches: [master]  
   workflow_dispatch:  # Manual trigger for PROD
     inputs:
       environment:
