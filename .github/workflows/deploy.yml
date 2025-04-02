@@ -4,7 +4,8 @@ on:
   pull_request:
     types: [closed]
     branches: [main]  # Auto-deploy to DEV when PR is merged into main
-  workflow_dispatch:  # Allows manual trigger for PROD deployment
+
+  workflow_dispatch:  # Manual trigger for PROD deployment
     inputs:
       environment:
         description: 'Environment to deploy to'
@@ -19,37 +20,40 @@ jobs:
   deploy-to-dev:
     name: Deploy to DEV (`dlviigoapps1`)
     runs-on: self-hosted
-    if: github.event.pull_request.merged == true  # Only runs if PR is merged
+    if: github.event.pull_request.merged == true
     environment: dev
     steps:
       - name: Deploy to DEV (`dlviigoapps1`)
         run: |
           echo "🚀 Deploying to DEV on dlviigoapps1..."
-          dzdo su - igo -c "bash -c '
+
           cd /srv/prep/deployments/igo-marketplace-login
           git pull
+
           cd igo-marketplace-login/
           npm ci
           npm run build
-          dzdo cp -rT build/ ../igo-marketplace-login-backend/public/
+
+          cp -rT build/ ../igo-marketplace-login-backend/public/
+
           cd ..
-          dzdo cp -rT igo-marketplace-login-backend/ /srv/www/igo-marketplace-login/
-          dzdo chmod -R 775 /srv/www/igo-marketplace-login/public/
+          cp -rT igo-marketplace-login-backend/ /srv/www/igo-marketplace-login/
+          chmod -R 775 /srv/www/igo-marketplace-login/public/
 
           # Restart PM2
-          if pm2 list | grep -q \"login\"; then
-            dzdo pm2 restart login
+          if pm2 list | grep -q "login"; then
+            pm2 restart login
           else
             cd /srv/www/igo-marketplace-login/
-            dzdo pm2 start bin/www --name login
+            pm2 start bin/www --name login
           fi
-          
+
           sleep 5
-          if ! pm2 show login | grep -q \"status.*online\"; then
-            echo \"❌ Failed to start login in DEV!\"
+          if ! pm2 show login | grep -q "status.*online"; then
+            echo "❌ Failed to start login in DEV!"
+            pm2 logs login --lines 50
             exit 1
           fi
-          '"
 
       - name: Restart NGINX on DEV
         run: |
@@ -62,33 +66,39 @@ jobs:
     runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
     environment: production
-    needs: deploy-to-dev  # Ensures DEV deployment happens first
+    needs: deploy-to-dev
     steps:
       - name: Deploy to PROD (`plviigoweb1`)
         run: |
           echo "🚀 Deploying to PROD on plviigoweb1..."
-          dzdo su - igo -c "bash -c '
+
           cd /prep/deployments/igo-marketplace-login
           git pull
+
           cd igo-marketplace-login/
           npm ci
           npm run build
 
-          # Ensure public directory exists
-          dzdo mkdir -p ../igo-marketplace-login-backend/public/
-          dzdo cp -rT build/ ../igo-marketplace-login-backend/public/
-          
+          cp -rT build/ ../igo-marketplace-login-backend/public/
+
           cd ..
-          dzdo cp -rT igo-marketplace-login-backend/ /srv/www/igo-marketplace-login/
-          dzdo chmod -R 775 /srv/www/igo-marketplace-login/public/
-          dzdo pm2 restart login
+          cp -rT igo-marketplace-login-backend/ /srv/www/igo-marketplace-login/
+          chmod -R 775 /srv/www/igo-marketplace-login/public/
+
+          # Restart PM2
+          if pm2 list | grep -q "login"; then
+            pm2 restart login
+          else
+            cd /srv/www/igo-marketplace-login/
+            pm2 start bin/www --name login
+          fi
 
           sleep 5
-          if ! dzdo pm2 show login | grep -q \"status.*online\"; then
-            echo \"❌ Failed to start login in PROD!\"
+          if ! pm2 show login | grep -q "status.*online"; then
+            echo "❌ Failed to start login in PROD!"
+            pm2 logs login --lines 50
             exit 1
           fi
-          '"
 
       - name: Restart NGINX on PROD
         run: |
