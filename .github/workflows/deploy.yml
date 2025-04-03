@@ -1,109 +1,81 @@
 name: CI/CD Pipeline for IGO Marketplace Login
-
 on:
-  pull_request:
-    types: [closed]
-    branches: [master]  
-  workflow_dispatch:  # Manual trigger for PROD
+  workflow_dispatch:  # Manual trigger only
     inputs:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'production'
+        default: 'dev'  # Changed default to dev for easier testing
         type: choice
         options:
           - dev
           - production
-
 jobs:
   deploy-to-dev:
     name: Deploy to DEV (`dlviigoapps1`)
     runs-on: self-hosted
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: github.event.inputs.environment == 'dev'  # Only run when dev is selected
     environment: dev
-
     steps:
       - name: Deploy to DEV
         run: |
           echo "🚀 Deploying to DEV on dlviigoapps1..."
-
           cd /srv/prep/deployments/igo-marketplace-login
           git pull
-
           cd igo-marketplace-login/
           npm run build
-
           cp -rT build/ ../igo-marketplace-login-backend/public/
-
           cd ..
           cp -rT igo-marketplace-login-backend/ /srv/www/igo-marketplace-login/
           chmod -R 775 /srv/www/igo-marketplace-login/public/
-
-          echo "🔁 Restarting app with PM2..."
+          echo "🔁 Checking if app exists in PM2..."
           if pm2 list | grep -q "login"; then
+            echo "App exists, restarting..."
             pm2 restart login
           else
+            echo "App doesn't exist, starting..."
             cd /srv/www/igo-marketplace-login/
             pm2 start bin/www --name login
           fi
-
           sleep 5
           if ! pm2 show login | grep -q "status.*online"; then
             echo "❌ PM2 process 'login' failed to start!"
             pm2 logs login --lines 50
             exit 1
           fi
-
-      - name: Restart NGINX on DEV
-        run: |
-          echo "🔄 Restarting NGINX on dlviigoapps1..."
-          dzdo nginx -t && dzdo systemctl restart nginx
-          echo "✅ NGINX restarted successfully"
-
+          echo "✅ Deployment completed successfully"
+  
   deploy-to-prod:
     name: Deploy to PROD (`plviigoweb1`)
     runs-on: self-hosted
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    if: github.event.inputs.environment == 'production'  # Only run when production is selected
     environment: production
-
     steps:
       - name: Deploy to PROD
         run: |
           echo "🚀 Deploying to PROD on plviigoweb1..."
-
           cd /prep/deployments/igo-marketplace-login
           git pull
-
-          # Make sure we’re on master branch
+          # Make sure we're on master branch
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$CURRENT_BRANCH" != "master" ]]; then
             echo "❌ You can only deploy 'master' branch to PROD."
             exit 1
           fi
-
           cd igo-marketplace-login/
           npm run build
-
           # Ensure public directory exists
           dzdo mkdir -p ../igo-marketplace-login-backend/public/
           dzdo cp -rT build/ ../igo-marketplace-login-backend/public/
-
           cd ..
           dzdo cp -rT igo-marketplace-login-backend/ /srv/www/igo-marketplace-login/
           dzdo chmod -R 775 /srv/www/igo-marketplace-login/public/
-
           echo "🔁 Restarting PM2 in PROD..."
           dzdo pm2 restart login
-
           sleep 5
           if ! dzdo pm2 show login | grep -q "status.*online"; then
             echo "❌ PM2 process 'login' failed to start in PROD!"
             dzdo pm2 logs login --lines 50
             exit 1
           fi
-
-      - name: Restart NGINX on PROD
-        run: |
-          echo "🔄 Restarting NGINX on plviigoweb1..."
-          dzdo nginx -t && dzdo systemctl restart nginx
-          echo "✅ NGINX restarted successfully"
+          echo "✅ Deployment completed successfully"
