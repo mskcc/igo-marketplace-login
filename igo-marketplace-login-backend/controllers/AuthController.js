@@ -103,6 +103,9 @@ const loadUser = async function(client, username, ldapResponse){
 
 	if(user){
 		logger.log("info", `Updating user: ${username}`);
+const loginDate = new Date();
+logger.info(`DEBUG-TIME: Setting loginLastDate to ${loginDate.toISOString()} for user: ${username}`);
+
 		const updatedUser = {
 			title,
 			groups: groups.join(','),
@@ -143,12 +146,22 @@ const loadUser = async function(client, username, ldapResponse){
 			loginFirstDate: loginDate,
 			loginLastDate: loginDate,
 			hierarchy: hierarchy
-		});
-		user.save(function (err) {
-			if (err) {
-				throw new Error(err.message);
-			}
-		});
+		});       logger.info(`About to save new user: ${username}`);
+
+try {
+    logger.info(`About to save new user with Promise: ${username}`);
+    user.save()
+        .then(savedUser => {
+            logger.info(`Successfully saved new user ${username} to MongoDB with id: ${savedUser._id}`);
+        })
+        .catch(err => {
+            logger.error(`Error saving new user ${username} to MongoDB: ${err.message}`);
+            logger.error(`Error details: ${JSON.stringify(err)}`);
+        });
+} catch (err) {
+    logger.error(`Exception during user save for ${username}: ${err.message}`);
+}
+
 	}
 
 	return user;
@@ -161,6 +174,8 @@ const loadUser = async function(client, username, ldapResponse){
  * @param updatedUser, object - data to update User document
  */
 const updateUser = function(username, updatedUser){
+logger.info(`DEBUG-TIME: Calling updateOne for user ${username} with loginLastDate: ${updatedUser.loginLastDate.toISOString()}`);
+    
     UserModel.updateOne(
             { username: username },
             updatedUser,
@@ -168,9 +183,31 @@ const updateUser = function(username, updatedUser){
             function(err, numberAffected){
                 if(err) {
                     logger.error(`Error updating user ${username}: ${err}`);
+                }else {
+                    logger.info(`DEBUG-TIME: MongoDB update result for ${username}: ${JSON.stringify(numberAffected)}`);
                 }
             }
     );
+try {
+        // Create a separate object to avoid reference issues
+        const debugUpdatedUser = {
+            loginLastDate: new Date() // Use a fresh timestamp to see if it updates
+        };
+        
+        logger.info(`DEBUG-TIME: Trying Promise update with time: ${debugUpdatedUser.loginLastDate.toISOString()}`);
+        
+        // Use Promise approach alongside the original
+        UserModel.updateOne(
+            { username: username }, 
+            debugUpdatedUser
+        ).then(result => {
+            logger.info(`DEBUG-TIME: MongoDB Promise update result for ${username}: ${JSON.stringify(result)}`);
+        }).catch(err => {
+            logger.error(`DEBUG-TIME: Error in Promise update: ${err.message}`);
+        });
+    } catch(err) {
+        logger.error(`DEBUG-TIME: Exception in Promise update: ${err.message}`);
+    }
 }
 
 /**
@@ -205,7 +242,7 @@ exports.login = [
 
 				// Redact fields, groups especially can be very large and result in nginx header issues.
 				const jwtPayload = userData.toJSON();
-				delete jwtPayload.groups;
+				//delete jwtPayload.groups;
 				delete jwtPayload.loginFirstDate;
 				delete jwtPayload.createdAt;
 				delete jwtPayload.updatedAt;
